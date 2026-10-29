@@ -12,7 +12,6 @@ exposed through a REST API. Calling back finds the data (and recognises the retu
 ```
 Caller ─PSTN─▶ Vapi (telephony + STT + TTS + LLM loop)
                   │  tool calls: lookup_patient / save_patient / update_patient
-                  │  end-of-call-report (transcript, summary)
                   ▼  HTTPS + X-Vapi-Secret
             FastAPI  ── /vapi/webhook ─┐
                │                       ├─▶ pydantic validation ─▶ db.py ─▶ SQLite
