@@ -37,14 +37,16 @@ result*, which the prompt instructs the model to turn into a field-specific re-p
 - **FastAPI + pydantic** - validation as declarative types, auto OpenAPI docs.
 - **SQLite (WAL)** - zero-ops, persists across restarts on a volume. Schema has CHECK constraints (phone length,
   sex enum, ZIP pattern, DOB format) as a second line of defence behind pydantic. Swap to Postgres by replacing `db.py`.
-- **GPT-4o** by default (`LLM_MODEL`); set `LLM_PROVIDER=anthropic` and a Claude model to switch. Both need the provider key added in the Vapi dashboard.
+- **Gemini 2.5 Flash** (free tier, fast, reliable tool calling) via Vapi. Chosen because I had no OpenAI/Anthropic key
+  at the time; switching is two env vars (`LLM_PROVIDER`, `LLM_MODEL`) plus re-running `create_assistant.py <id>`.
+  The prompt and code are model-agnostic.
 
 ## Setup
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env            # fill in values
-export $(grep -v '^#' .env | xargs)
+# macOS/Linux: export $(grep -v '^#' .env | xargs)     Windows PowerShell: $env:NAME="value" per variable
 uvicorn app.main:app --reload   # http://localhost:8000/docs
 pytest -q
 ```
@@ -53,7 +55,9 @@ For local dev expose with `ngrok http 8000`.
 
 **Create the voice agent**
 ```bash
-export PUBLIC_BASE_URL=https://<your-host> VAPI_API_KEY=... VAPI_WEBHOOK_SECRET=...
+# macOS/Linux
+export PUBLIC_BASE_URL=https://<your-host> VAPI_API_KEY=... VAPI_WEBHOOK_SECRET=... LLM_PROVIDER=google LLM_MODEL=gemini-2.5-flash
+# Windows PowerShell: $env:PUBLIC_BASE_URL="https://<your-host>"  (same for the others)
 python scripts/create_assistant.py     # prints assistant id
 ```
 Then in the Vapi dashboard: Phone Numbers -> create a free US number -> assign the assistant.
@@ -89,7 +93,9 @@ Envelope `{"data":..., "error":null}`; codes 200/201/400 (malformed JSON/query)/
 - REST API has no auth (reviewers need open access); add API keys/OAuth before real use.
 - Phone is not unique (families share numbers); duplicate check offers update but allows a new record.
 - Names with non-ASCII letters (e.g. "José") are rejected by the spec's alphabetic rule; relax regex for production.
+- The agent discloses the name on file when a caller's phone matches (required by the bonus spec); a real system would verify identity first.
 - Logs contain patient data - acceptable for test data only (not HIPAA-ready).
+- LLM invention guard: the model once filled missing required fields with "Unknown"; fixed server-side (placeholders are rejected) and in the prompt.
 - Vapi's Deepgram STT can mis-hear spelled names/emails; mitigated by spell-and-read-back in the prompt.
 
 ## Next steps
