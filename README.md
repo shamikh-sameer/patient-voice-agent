@@ -3,9 +3,9 @@
 Call a real U.S. number, talk to "Riley", and a validated patient record lands in a database
 exposed through a REST API. Calling back finds the data (and recognises the returning caller).
 
-- **Phone number:** `<FILL IN>`
-- **API base URL:** `<FILL IN>` (try `GET /patients`, `GET /health`)
-- **Docs (auto):** `<API base URL>/docs`
+- **Phone number:** `+1 (404) 260 2215`
+- **API base URL:** `https://patient-voice-agent-production-b32f.up.railway.app` (try `GET /patients`, `GET /health`)
+- **Docs (auto):** `https://patient-voice-agent-production-b32f.up.railway.app/docs`
 
 ## Architecture
 
