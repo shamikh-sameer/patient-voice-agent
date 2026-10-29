@@ -81,9 +81,10 @@ Envelope `{"data":..., "error":null}`; codes 200/201/400 (malformed JSON/query)/
 ## Edge cases handled
 - Invalid DOB/phone/state/ZIP: server returns field-specific error -> agent re-asks only that field.
 - DB write fails: tool returns `ERROR`; prompt forbids claiming success, offers one retry, then hands off to staff.
-- Call drops mid-call: nothing is written before the explicit confirmation; `end-of-call-report` still stores the partial transcript in `calls`.
+- Call drops mid-call: nothing is written before the explicit confirmation, so a dropped call leaves no partial record.
 - Start over / corrections / interruptions / out-of-order answers: covered in the prompt.
-- Duplicate detection by phone (bonus), per-call transcript + summary linked to the patient (bonus), Spanish switch (bonus), automated API tests (bonus).
+- Duplicate detection by phone (bonus), Spanish switch (bonus, prompt-level), automated API tests (bonus).
+- Call transcripts: the webhook handler and a `calls` table exist, but Vapi's end-of-call report was rejected by the secret check during testing (unresolved), so transcripts are not stored.
 
 ## Logging
 `PATIENT_REGISTERED call=<id> payload=<json>` to stdout on every save; also `PATIENT_UPDATED`, `CALL_ENDED`.
