@@ -68,5 +68,7 @@ if len(sys.argv) > 1:
     r = httpx.patch(f"https://api.vapi.ai/assistant/{sys.argv[1]}", json=config, headers=headers, timeout=30)
 else:
     r = httpx.post("https://api.vapi.ai/assistant", json=config, headers=headers, timeout=30)
-r.raise_for_status()
+if r.status_code >= 400:
+    print("Vapi error:", r.status_code, r.text)
+    sys.exit(1)
 print("assistant id:", r.json()["id"])

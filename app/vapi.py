@@ -100,6 +100,12 @@ async def vapi_webhook(request: Request, x_vapi_secret: str | None = Header(defa
     _check_secret(x_vapi_secret)
     body = await request.json()
     msg = body.get("message", {})
+    try:
+        _check_secret(x_vapi_secret)
+    except HTTPException:
+        log.warning("webhook rejected type=%s secret_header_present=%s",
+                    msg.get("type"), x_vapi_secret is not None)
+        raise
     mtype = msg.get("type")
     call = msg.get("call") or {}
     call_id = call.get("id", "")
