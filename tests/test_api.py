@@ -65,3 +65,8 @@ def test_voice_tool_flow_and_duplicate(client):
     assert len(client.get("/patients?phone_number=4045550123").json()["data"]) == 1
     client.post("/vapi/webhook", json={"message": {"type": "end-of-call-report", "call": {"id": "c1"},
                 "transcript": "hi", "summary": "s", "endedReason": "hangup"}})
+
+
+def test_placeholders_rejected(client):
+    for field, value in [("address_line_1", "Unknown"), ("city", "N/A"), ("zip_code", "00000")]:
+        assert client.post("/patients", json={**GOOD, field: value}).status_code == 422

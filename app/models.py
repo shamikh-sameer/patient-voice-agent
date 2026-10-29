@@ -102,8 +102,8 @@ def v_state(v: str) -> str:
 
 def v_zip(v: str) -> str:
     v = clean_text(v)
-    if not ZIP_RE.match(v):
-        raise ValueError("ZIP code must be 5 digits or ZIP+4")
+    if not ZIP_RE.match(v) or v.startswith("00000"):
+        raise ValueError("ZIP code must be a real 5-digit or ZIP+4 code")
     return v
 
 
@@ -130,6 +130,12 @@ Language = Annotated[str, AfterValidator(v_text(50))]
 FullName = Annotated[str, AfterValidator(v_text(100))]
 
 
+# Placeholders an LLM may invent to "satisfy" a required field. Treated as NOT PROVIDED,
+# so required fields fail with "Field required" and the agent must ask the caller.
+PLACEHOLDERS = {"", "null", "none", "n/a", "na", "unknown", "unspecified", "not provided",
+                "not given", "tbd", "undefined", "string"}
+
+
 class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -138,7 +144,8 @@ class _Strict(BaseModel):
     def _drop_blanks(cls, data):
         # Voice LLMs often send "" / null for "not provided"; treat as absent.
         if isinstance(data, dict):
-            return {k: v for k, v in data.items() if v not in (None, "", "null", "N/A")}
+            return {k: v for k, v in data.items()
+                    if v is not None and str(v).strip().lower() not in PLACEHOLDERS}
         return data
 
 

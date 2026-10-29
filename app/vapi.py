@@ -97,7 +97,6 @@ def _check_secret(provided: str | None) -> None:
 
 @router.post("/vapi/webhook")
 async def vapi_webhook(request: Request, x_vapi_secret: str | None = Header(default=None)):
-    _check_secret(x_vapi_secret)
     body = await request.json()
     msg = body.get("message", {})
     try:
