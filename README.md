@@ -3,17 +3,16 @@
 Call a real U.S. number, talk to "Riley", and a validated patient record lands in a database
 exposed through a REST API. Calling back finds the data (and recognises the returning caller).
 
-- **Phone number:** `<FILL IN>`
-- **API base URL:** `<FILL IN>` (try `GET /patients`, `GET /health`)
-- **Dashboard:** `<API base URL>/dashboard` (read-only patient list, search, auto-refresh)
-- **Docs (auto):** `<API base URL>/docs`
+- **Phone number:** `+1 (404) 260 2215`
+- **API base URL:** `[<FILL IN>](https://patient-voice-agent-production-b32f.up.railway.app)` (try `GET /patients`, `GET /health`)
+- **Dashboard:** `[<API base URL>](https://patient-voice-agent-production-b32f.up.railway.app)/dashboard` (read-only patient list, search, auto-refresh)
+- **Docs (auto):** `[<API base URL>](https://patient-voice-agent-production-b32f.up.railway.app)/docs`
 
 ## Architecture
 
 ```
 Caller ─PSTN─▶ Vapi (telephony + STT + TTS + LLM loop)
                   │  tool calls: lookup_patient / save_patient / update_patient
-                  │  end-of-call-report (transcript, summary)
                   ▼  HTTPS + X-Vapi-Secret
             FastAPI  ── /vapi/webhook ─┐
                │                       ├─▶ pydantic validation ─▶ db.py ─▶ SQLite
