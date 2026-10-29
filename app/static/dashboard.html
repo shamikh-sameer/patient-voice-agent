@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patient Registrations</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c2430; --muted:#6b7686; --line:#e3e7ee; --accent:#2457d6; --chip:#eef2fb; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12161c; --card:#1b212a; --text:#e8ecf2; --muted:#93a0b2; --line:#2a323e; --accent:#7aa2ff; --chip:#242c39; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:24px 20px 8px; max-width:1100px; margin:0 auto; }
+  h1 { margin:0 0 4px; font-size:22px; }
+  .sub { color:var(--muted); font-size:13px; }
+  .sub a { color:var(--accent); }
+  .bar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; max-width:1100px; margin:12px auto 0; padding:0 20px; }
+  input[type=search] { flex:1; min-width:200px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); font:inherit; }
+  button { padding:9px 14px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--text); font:inherit; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  .count { color:var(--muted); font-size:13px; }
+  .wrap { max-width:1100px; margin:12px auto 40px; padding:0 20px; }
+  .scroll { overflow-x:auto; background:var(--card); border:1px solid var(--line); border-radius:10px; }
+  table { width:100%; border-collapse:collapse; min-width:760px; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  tr.row { cursor:pointer; }
+  tr.row:hover td { background:var(--chip); }
+  tr.detail td { white-space:normal; background:var(--chip); font-size:13px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:6px 18px; }
+  .grid b { color:var(--muted); font-weight:500; }
+  .empty, .err { padding:28px; text-align:center; color:var(--muted); }
+  .err { color:#c0392b; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Patient Registrations</h1>
+  <div class="sub">Live view of records saved by the voice agent. Read-only &middot;
+    <a href="/docs">API docs</a> &middot; <a href="/patients">raw JSON</a></div>
+</header>
+<div class="bar">
+  <input type="search" id="q" placeholder="Search name, phone, city, insurance...">
+  <button id="refresh">Refresh</button>
+  <span class="count" id="count"></span>
+</div>
+<div class="wrap">
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Name</th><th>DOB</th><th>Sex</th><th>Phone</th><th>City, State</th><th>Insurance</th><th>Registered (UTC)</th></tr></thead>
+      <tbody id="body"></tbody>
+    </table>
+    <div id="msg"></div>
+  </div>
+</div>
+<script>
+  // All values from the API are inserted with textContent (never innerHTML): they come from callers.
+  let patients = [];
+  const $ = id => document.getElementById(id);
+  const fmtPhone = p => p && p.length === 10 ? `(${p.slice(0,3)}) ${p.slice(3,6)}-${p.slice(6)}` : (p || "");
+  const fmtTime = t => t ? t.replace("T", " ").replace("+00:00", "") : "";
+
+  function cell(tr, text) { const td = document.createElement("td"); td.textContent = text; tr.appendChild(td); }
+
+  function detailRow(p) {
+    const tr = document.createElement("tr"); tr.className = "detail";
+    const td = document.createElement("td"); td.colSpan = 7;
+    const g = document.createElement("div"); g.className = "grid";
+    const fields = [["Patient ID", p.patient_id], ["Email", p.email], ["Address", [p.address_line_1, p.address_line_2].filter(Boolean).join(", ")],
+      ["ZIP", p.zip_code], ["Insurance member ID", p.insurance_member_id], ["Language", p.preferred_language],
+      ["Emergency contact", p.emergency_contact_name], ["Emergency phone", fmtPhone(p.emergency_contact_phone)], ["Updated (UTC)", fmtTime(p.updated_at)]];
+    for (const [k, v] of fields) {
+      const d = document.createElement("div"); const b = document.createElement("b"); b.textContent = k + ": ";
+      d.appendChild(b); d.appendChild(document.createTextNode(v || "-")); g.appendChild(d);
+    }
+    td.appendChild(g); tr.appendChild(td); return tr;
+  }
+
+  function render() {
+    const term = $("q").value.trim().toLowerCase();
+    const rows = patients.filter(p => !term || JSON.stringify(p).toLowerCase().includes(term));
+    const body = $("body"); body.textContent = "";
+    for (const p of rows) {
+      const tr = document.createElement("tr"); tr.className = "row";
+      cell(tr, `${p.first_name} ${p.last_name}`); cell(tr, p.date_of_birth); cell(tr, p.sex); cell(tr, fmtPhone(p.phone_number));
+      cell(tr, `${p.city}, ${p.state}`); cell(tr, p.insurance_provider || "-"); cell(tr, fmtTime(p.created_at));
+      let open = null;
+      tr.onclick = () => { if (open) { open.remove(); open = null; } else { open = detailRow(p); tr.after(open); } };
+      body.appendChild(tr);
+    }
+    $("count").textContent = `${rows.length} of ${patients.length} patients`;
+    $("msg").innerHTML = ""; 
+    if (!rows.length) { const d = document.createElement("div"); d.className = "empty"; d.textContent = patients.length ? "No matches." : "No patients registered yet."; $("msg").appendChild(d); }
+  }
+
+  async function load() {
+    try {
+      const r = await fetch("/patients?limit=500");
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error ? j.error.message : r.status);
+      patients = j.data; render();
+    } catch (e) {
+      $("msg").textContent = ""; const d = document.createElement("div"); d.className = "err"; d.textContent = "Could not load patients: " + e.message; $("msg").appendChild(d);
+    }
+  }
+  $("q").addEventListener("input", render);
+  $("refresh").addEventListener("click", load);
+  load(); setInterval(load, 15000);
+</script>
+</body>
+</html>

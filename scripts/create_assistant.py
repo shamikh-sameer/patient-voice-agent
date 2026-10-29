@@ -39,8 +39,8 @@ config = {
     "name": "Patient Registration - Riley",
     "firstMessage": "Thanks for calling patient registration, this is Riley. Can I get your first and last name?",
     "model": {
-        "provider": os.environ.get("LLM_PROVIDER", "openai"),
-        "model": os.environ.get("LLM_MODEL", "gpt-4o"),
+        "provider": os.environ.get("LLM_PROVIDER", "google"),
+        "model": os.environ.get("LLM_MODEL", "gemini-2.5-flash"),
         "temperature": 0.4,
         "messages": [{"role": "system", "content": PROMPT}],
         "tools": [

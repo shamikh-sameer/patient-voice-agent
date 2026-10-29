@@ -2,13 +2,13 @@
 import logging
 import sqlite3
 from contextlib import asynccontextmanager
-from datetime import date
+from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
 from fastapi import FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from . import db
 from .models import PatientCreate, PatientUpdate, normalize_phone, v_dob
@@ -56,6 +56,12 @@ async def unhandled(_: Request, exc: Exception):
 
 def _not_found():
     return envelope(error={"code": "not_found", "message": "Patient not found"}, status=404)
+
+
+@app.get("/dashboard", include_in_schema=False)
+def dashboard():
+    """Read-only HTML dashboard; it renders data from GET /patients."""
+    return FileResponse(Path(__file__).parent / "static" / "dashboard.html")
 
 
 @app.get("/health")

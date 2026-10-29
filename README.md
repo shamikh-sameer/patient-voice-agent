@@ -5,6 +5,7 @@ exposed through a REST API. Calling back finds the data (and recognises the retu
 
 - **Phone number:** `+1 (404) 260 2215`
 - **API base URL:** `https://patient-voice-agent-production-b32f.up.railway.app` (try `GET /patients`, `GET /health`)
+- **Dashboard:** `https://patient-voice-agent-production-b32f.up.railway.app/dashboard` (read-only patient list, search,    auto-refresh)
 - **Docs (auto):** `https://patient-voice-agent-production-b32f.up.railway.app/docs`
 
 ## Architecture
@@ -12,7 +13,6 @@ exposed through a REST API. Calling back finds the data (and recognises the retu
 ```
 Caller ─PSTN─▶ Vapi (telephony + STT + TTS + LLM loop)
                   │  tool calls: lookup_patient / save_patient / update_patient
-                  │  end-of-call-report (transcript, summary)
                   ▼  HTTPS + X-Vapi-Secret
             FastAPI  ── /vapi/webhook ─┐
                │                       ├─▶ pydantic validation ─▶ db.py ─▶ SQLite
@@ -83,7 +83,7 @@ Envelope `{"data":..., "error":null}`; codes 200/201/400 (malformed JSON/query)/
 - DB write fails: tool returns `ERROR`; prompt forbids claiming success, offers one retry, then hands off to staff.
 - Call drops mid-call: nothing is written before the explicit confirmation; `end-of-call-report` still stores the partial transcript in `calls`.
 - Start over / corrections / interruptions / out-of-order answers: covered in the prompt.
-- Duplicate detection by phone (bonus), per-call transcript + summary linked to the patient (bonus), Spanish switch (bonus), automated API tests (bonus).
+- Duplicate detection by phone (bonus), per-call transcript + summary linked to the patient (bonus), Spanish switch (bonus), automated API tests (bonus), dashboard at `/dashboard` (bonus).
 
 ## Logging
 `PATIENT_REGISTERED call=<id> payload=<json>` to stdout on every save; also `PATIENT_UPDATED`, `CALL_ENDED`.
